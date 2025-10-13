@@ -12,3 +12,7 @@ if __name__ == "__main__":
     print("Calling app.run(...)")  # sanity print
     app.run(debug=True)
 
+
+@app.get("/cart")
+def view_cart():
+    return "Your cart is empty"
