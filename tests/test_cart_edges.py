@@ -17,7 +17,7 @@ def test_discount_code_cases(client):
     client.post("/cart/clear")
     client.post("/cart/add", json={"title": "Book", "qty": 1})
     for code in ["SAVE10", "save10", "Save10"]:
-        r = client.post("/cart/discount", json={"code": code})
+        r = client.post("/cart/apply-discount", json={"code": code})
         assert r.status_code in (HTTPStatus.OK, HTTPStatus.BAD_REQUEST)
 
 def test_checkout_missing_fields_strict(client):

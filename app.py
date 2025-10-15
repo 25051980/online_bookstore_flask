@@ -21,7 +21,13 @@ def cart_add():
     # Tests likely post form-encoded, but support JSON too
     data = request.get_json(silent=True) or request.form or {}
     title = data.get("title")
-    qty = int(data.get("qty", 1) or 1)
+    try:
+        raw_qty = data.get("qty", 1)
+        qty = int(raw_qty)
+        if qty <= 0:
+            raise ValueError("qty must be positive")
+    except (TypeError, ValueError):
+        return ("Invalid qty", 400)
     cart = session.get("cart", [])
     cart.append({"title": title, "qty": qty})
     session["cart"] = cart
