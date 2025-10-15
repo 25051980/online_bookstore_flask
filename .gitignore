@@ -5,3 +5,11 @@ __pycache__/
 .pytest_cache/
 htmlcov/
 coverage.xml
+# Python / coverage / build
+__pycache__/
+*.pyc
+.venv/
+.coverage
+htmlcov/
+profile.txt
+*.prof
