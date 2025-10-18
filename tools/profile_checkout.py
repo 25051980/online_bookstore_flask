@@ -2,11 +2,13 @@
 Profile the /checkout flow end-to-end to find hotspots.
 Run:  python tools/profile_checkout.py
 """
+
 import cProfile
 import pstats
 from io import StringIO
 
 from app import app  # expects app.py at repo root
+
 
 def run_flow():
     with app.test_client() as client:
@@ -25,6 +27,7 @@ def run_flow():
             "card_cvv": "123",
         }
         client.post("/checkout", data=form, follow_redirects=True)
+
 
 if __name__ == "__main__":
     pr = cProfile.Profile()

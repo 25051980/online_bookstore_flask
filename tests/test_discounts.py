@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 def test_apply_save10_and_view_cart(client):
     # reset cart
     client.post("/cart/clear")

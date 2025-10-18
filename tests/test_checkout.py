@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 def test_checkout_success(client):
     # start clean and add an item
     client.post("/cart/clear")
@@ -21,6 +22,7 @@ def test_checkout_success(client):
     page = r.get_data(as_text=True)
     assert "Order Confirmation" in page
     assert "Order ID" in page
+
 
 def test_checkout_missing_required_fields(client):
     client.post("/cart/clear")
