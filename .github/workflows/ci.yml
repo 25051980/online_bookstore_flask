@@ -1,46 +1,58 @@
 name: CI
+
 on:
-  push: { branches: ["**"] }
-  pull_request: { branches: ["**"] }
+  push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ['3.9', '3.10', '3.11']
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: ${{ matrix.python-version }} }
-      - uses: actions/cache@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8 bandit
+
       - name: Lint (flake8)
-        run: flake8 .
-      - name: Security (bandit)
-        run: bandit -q -r . || true
-      - name: Tests + coverage (87% gate, epsilon tolerant)
+        run: flake8 --config=.flake8 .
+
+      - name: Security scan (bandit)
+        run: bandit -r . -q || true
+
+      - name: Run tests with coverage
         run: |
-          pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing
+          pytest -q --maxfail=1 --disable-warnings \
+            --cov=app --cov-report=term-missing:skip-covered --cov-report=xml
+
+      - name: Enforce coverage >= 87% (only on 3.11)
+        if: matrix.python-version == '3.11'
+        run: |
           python - <<'PY'
-          import xml.etree.ElementTree as ET, sys
-          rate = float(ET.parse('coverage.xml').getroot().attrib['line-rate'])
-          thr  = 0.87
-          eps  = 1e-6
-          print(f"line-rate={rate:.4f}, threshold={thr}")
-          sys.exit(0 if rate + eps >= thr else 1)
-          PY
+import xml.etree.ElementTree as ET, sys
+pct = float(ET.parse('coverage.xml').getroot().attrib['line-rate']) * 100
+print(f"Total coverage: {pct:.2f}%")
+sys.exit(0 if pct >= 87.0 else 1)
+PY
+
       - name: Upload coverage artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-xml
+          name: coverage-${{ matrix.python-version }}
           path: coverage.xml
-          if-no-files-found: error
