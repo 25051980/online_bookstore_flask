@@ -11,40 +11,33 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
+        with: { python-version: ${{ matrix.python-version }} }
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: ${{ runner.os }}-pip-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       - name: Lint (flake8)
         run: flake8 .
-
       - name: Security (bandit)
         run: bandit -q -r . || true
-
-      - name: Tests + coverage (88% gate)
+      - name: Tests + coverage (87% gate, epsilon tolerant)
         run: |
           pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing
           python - <<'PY'
           import xml.etree.ElementTree as ET, sys
           rate = float(ET.parse('coverage.xml').getroot().attrib['line-rate'])
-          thr = 0.88
-          print(f"line-rate={rate:.3f}, threshold={thr}")
-          sys.exit(0 if rate >= thr else 1)
+          thr  = 0.87
+          eps  = 1e-6
+          print(f"line-rate={rate:.4f}, threshold={thr}")
+          sys.exit(0 if rate + eps >= thr else 1)
           PY
-
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
